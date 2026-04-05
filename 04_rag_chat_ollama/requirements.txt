@@ -1,0 +1,22 @@
+# Data handling
+pandas
+numpy
+
+# PostgreSQL
+psycopg2-binary
+sqlalchemy
+
+# Hugging Face & Transformers
+torch
+transformers
+accelerate
+peft
+trl
+datasets
+
+# Vector DB for RAG
+faiss-cpu
+chromadb
+
+# Optional for CLI
+tqdm

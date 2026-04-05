@@ -1,0 +1,15 @@
+# Model training artifacts
+models/*.pkl
+models/coordinate_scaler.pkl
+
+# Data files (ignored to keep repo small)
+data/*.csv
+data/*.json
+*.csv
+*.json
+
+# Python environment
+venv/
+__pycache__/
+.ipynb_checkpoints/
+.env
