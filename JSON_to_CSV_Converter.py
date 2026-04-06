@@ -6,6 +6,10 @@ import os
 def build_verification_dict(filepath):
     v_dict = {}
     doc_count = 0
+    if not os.path.exists(filepath):
+        print(f"⚠️ Warning: Verification file not found at {filepath}")
+        return v_dict
+
     with open(filepath, 'rb') as f:
         for doc in ijson.items(f, 'item'):
             doc_count += 1
@@ -58,6 +62,10 @@ def stream_npm_to_csv(npm_filepath, v_dict, out_csv):
     
     components_written = 0
     doc_count = 0
+    if not os.path.exists(npm_filepath):
+        print(f"⚠️ Warning: NPM file not found at {npm_filepath}")
+        return 0
+
     with open(out_csv, 'w', newline='', encoding='utf-8') as cout:
         writer = csv.writer(cout)
         writer.writerow(headers)
@@ -121,16 +129,24 @@ def stream_npm_to_csv(npm_filepath, v_dict, out_csv):
     return components_written
 
 def main():
-    # Directly targeting the huge 2.5 GB database files!
+    # Try looking for files in relative paths if absolute ones fail
     verification_path = r"C:\Users\dhifl\Desktop\ai training\Verification-Station.json"
     npm_path = r"C:\Users\dhifl\Desktop\ai training\Ai-Dataset.Npm.json"
+
+    if not os.path.exists(verification_path):
+        verification_path = "Verification-Station.json"
+    if not os.path.exists(npm_path):
+        npm_path = "Ai-Dataset.Npm.json"
 
     out_csv = "final_dataset.csv"
     
     print(f"Starting pipeline. Target CSV: {out_csv}")
     v_dict = build_verification_dict(verification_path)
     count = stream_npm_to_csv(npm_path, v_dict, out_csv)
-    print(f"PIPELINE COMPLETE! Giant CSV successfully generated with {count} component rows!")
+    if count > 0:
+        print(f"PIPELINE COMPLETE! Giant CSV successfully generated with {count} component rows!")
+    else:
+        print("❌ FAILED: No data was processed. Check if raw JSON files exist.")
 
 if __name__ == "__main__":
     main()

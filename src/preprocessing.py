@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler
 
 def clean_and_feature_engineer(df):
     """
@@ -31,10 +31,13 @@ def aggregate_to_boards(df_clean):
     """
     Aggregates component-level data into board-level summaries for machine learning.
     """
-    # Initialize LabelEncoder for target if not already encoded
-    if 'y_Target' not in df_clean.columns:
-        le = LabelEncoder()
-        df_clean['y_Target'] = le.fit_transform(df_clean['Componenet_Result'].astype(str))
+    # B. Target Logic (If any component failed, the whole board failed)
+    # Ensure Componenet_Result is clean
+    df_clean['Componenet_Result'] = df_clean['Componenet_Result'].astype(str).str.strip()
+    
+    # Map Pass -> 0, everything else (Fail, etc) -> 1
+    # This ensures that 'Fail' maps to 1 for training.
+    df_clean['y_Target'] = df_clean['Componenet_Result'].map(lambda x: 0 if x == 'Pass' else 1)
 
     # Initialize Scaler for coordinates
     scaler = StandardScaler()
