@@ -60,7 +60,8 @@ def train_and_save_pipeline(csv_path, output_dir='models'):
 
 if __name__ == "__main__":
     # Adjust this path to your actual local dataset path
-    DATA_PATH = 'final_dataset.csv' 
+    DATA_PATH = r'C:\Users\dhifl\Desktop\B4CSolutions\Training\production-intelligence-system\final_dataset.csv' 
+    print(f"Data file found at {DATA_PATH}")
     if os.path.exists(DATA_PATH):
         train_and_save_pipeline(DATA_PATH)
     else:

@@ -11,6 +11,11 @@ class RAGEngine:
         self.llm_model = T5ForConditionalGeneration.from_pretrained(model_name)
         self.chroma_client = chromadb.Client()
         self.collection = self.chroma_client.get_or_create_collection(name="production_history")
+        self.global_stats = ""
+
+    def set_global_stats(self, stats_string):
+        """Set pre-calculated global statistics for the LLM context."""
+        self.global_stats = stats_string
 
     def row_to_document(self, row):
         verif_status = "has verification data" if row.get('Has_Verification', False) else "has NO verification data"
@@ -27,7 +32,19 @@ class RAGEngine:
 
     def index_data(self, df, sample_size=10000):
         print(f"Indexing {sample_size} records into ChromaDB...")
-        df_sample = df.dropna(subset=['Barcode', 'Designator']).head(sample_size)
+        # To better represent failures, let's sample from failures first if possible
+        failures = df[df['Componenet_Result'].astype(str).str.strip() != 'Pass']
+        pass_records = df[df['Componenet_Result'].astype(str).str.strip() == 'Pass']
+        
+        # Take 50% failures if available, otherwise take as many as possible
+        fail_sample_size = min(len(failures), sample_size // 2)
+        pass_sample_size = sample_size - fail_sample_size
+        
+        df_sample = pd.concat([
+            failures.sample(n=fail_sample_size, random_state=42),
+            pass_records.sample(n=min(len(pass_records), pass_sample_size), random_state=42)
+        ]).head(sample_size)
+        
         documents = [self.row_to_document(row) for _, row in df_sample.iterrows()]
         embeddings = self.encoder.encode(documents, show_progress_bar=True).tolist()
         ids = [str(i) for i in range(len(documents))]
@@ -48,9 +65,13 @@ class RAGEngine:
         retrieved_docs = results['documents'][0]
         
         context = "\n".join(retrieved_docs)
-        prompt = f"Based on this manufacturing data:\n{context}\n\nAnswer this question: {user_question}"
+        prompt = (
+            f"Global Data Insights:\n{self.global_stats}\n\n"
+            f"Specific Production History (Retrieved):\n{context}\n\n"
+            f"Answer this question based on the insights and specific history: {user_question}"
+        )
         
-        inputs = self.tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
+        inputs = self.tokenizer(prompt, return_tensors="pt", max_length=1024, truncation=True)
         outputs = self.llm_model.generate(**inputs, max_new_tokens=200)
         response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         
